@@ -24,7 +24,6 @@ routed path with distance and duration.
     ├─ app/           # FastAPI app (main.py, routers, services, models)
     ├─ static/        # Frontend (index.html and assets)
     ├─ tests/         # Unit tests (pytest)
-    ├─ data/          # Optional data folder (not required to run)
     ├─ cache/         # Local cache (ignored in .gitignore)
     └─ requirements.txt
 
@@ -32,7 +31,7 @@ routed path with distance and duration.
 
     # 1. Create and activate a virtual environment (optional but recommended)
     python -m venv .venv
-    .\.venv\Scriptsctivate      # Windows
+    .\.venv\Scripts\activate      # Windows
     # source .venv/bin/activate   # Linux / macOS
 
     # 2. Install dependencies
@@ -46,6 +45,4 @@ Then open:
 -   API docs: http://127.0.0.1:8000/docs
 -   Map UI: http://127.0.0.1:8000/map
 
-## License
 
-MIT (or your preferred license).
