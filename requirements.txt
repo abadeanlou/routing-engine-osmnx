@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-dotenv
+loguru
+pytest
+httpx
+networkx
+osmnx
+scikit-learn

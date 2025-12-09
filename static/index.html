@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Routing Engine Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet/dist/leaflet.css"
+    />
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0; bottom: 0;
+            left: 0; right: 0;
+        }
+        #controls {
+            position: absolute;
+            top: 10px; left: 10px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.95);
+            padding: 10px 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+            font-family: sans-serif;
+            font-size: 13px;
+            width: 200px;
+        }
+        #controls button {
+            width: 100%;
+            margin: 6px 0;
+        }
+        #status {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #444;
+            word-wrap: break-word;
+        }
+        #summary {
+            font-size: 12px;
+            color: #222;
+            margin-top: 6px;
+        }
+        #warnings {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #cc0000;
+            font-weight: bold;
+            white-space: pre-line;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- UI controls -->
+    <div id="controls">
+        <strong>Routing Demo</strong><br>
+        Click map once for origin, second for destination.
+        <button id="btnRoute">Compute Route</button>
+        <button id="btnClear">Clear</button>
+        <div id="status">Status: idle</div>
+        <div id="summary"></div>
+        <div id="warnings"></div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+
+    // ---------------------------------------
+    // Initial map setup
+    // ---------------------------------------
+    const map = L.map('map').setView([45.4642, 9.19], 12); // Milan default
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let originMarker = null;
+    let destMarker = null;
+    let routeLine = null;
+
+    const statusEl = document.getElementById('status');
+    const summaryEl = document.getElementById('summary');
+    const warningsEl = document.getElementById('warnings');
+    const btnRoute = document.getElementById('btnRoute');
+    const btnClear = document.getElementById('btnClear');
+
+    // ---------------------------------------
+    // Handle map clicks (origin / destination)
+    // ---------------------------------------
+    map.on('click', function(e) {
+        const latlng = e.latlng;
+
+        if (!originMarker) {
+            originMarker = L.marker(latlng, { draggable: true })
+                            .addTo(map)
+                            .bindPopup("Origin")
+                            .openPopup();
+        }
+        else if (!destMarker) {
+            destMarker = L.marker(latlng, { draggable: true })
+                          .addTo(map)
+                          .bindPopup("Destination")
+                          .openPopup();
+        }
+        else {
+            destMarker.setLatLng(latlng).openPopup();
+        }
+    });
+
+    // ---------------------------------------
+    // Clear UI
+    // ---------------------------------------
+    btnClear.addEventListener('click', () => {
+        if (originMarker) {
+            map.removeLayer(originMarker);
+            originMarker = null;
+        }
+        if (destMarker) {
+            map.removeLayer(destMarker);
+            destMarker = null;
+        }
+        if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+        }
+        summaryEl.innerText = '';
+        warningsEl.innerText = '';
+        statusEl.innerText = 'Status: idle';
+    });
+
+    // ---------------------------------------
+    // Call backend API
+    // ---------------------------------------
+    btnRoute.addEventListener('click', async () => {
+
+        if (!originMarker || !destMarker) {
+            alert("Please click the map to set origin and destination.");
+            return;
+        }
+
+        const o = originMarker.getLatLng();
+        const d = destMarker.getLatLng();
+
+        const payload = {
+            origin: { lat: o.lat, lon: o.lng },
+            destination: { lat: d.lat, lon: d.lng },
+            departure_time: null
+        };
+
+        statusEl.innerText = "Status: computing route...";
+        summaryEl.innerText = '';
+        warningsEl.innerText = '';
+
+        try {
+            const response = await fetch('/route/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                statusEl.innerText = "Status: error " + response.status;
+                console.error(await response.text());
+                return;
+            }
+
+            const data = await response.json();
+
+            // ---------------------------------------
+            // Handle geometry
+            // ---------------------------------------
+            const coords =
+                (data.geometry && data.geometry.coordinates) || [];
+
+            if (!coords.length) {
+                statusEl.innerText = "Status: no geometry";
+                return;
+            }
+
+            if (routeLine) {
+                map.removeLayer(routeLine);
+                routeLine = null;
+            }
+
+            // Convert from [lat, lon]
+            const latlngs = coords.map(c => [c[0], c[1]]);
+            routeLine = L.polyline(latlngs, {
+                weight: 5,
+                opacity: 0.9
+            }).addTo(map);
+
+            map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+
+            // ---------------------------------------
+            // Show summary
+            // ---------------------------------------
+            const dist = data.summary?.distance_m ?? data.distance_m;
+            const dur = data.summary?.duration_s ?? data.duration_s;
+
+            summaryEl.innerText =
+                "Distance: " + (dist / 1000).toFixed(2) + " km\n" +
+                "Duration: " + (dur / 60).toFixed(1) + " min";
+
+            // ---------------------------------------
+            // Show backend warnings (optional)
+            // ---------------------------------------
+            if (data.warnings && data.warnings.length > 0) {
+                warningsEl.innerText = data.warnings.join("\n");
+            }
+
+            statusEl.innerText = "Status: route computed";
+
+        } catch (err) {
+            console.error(err);
+            statusEl.innerText = "Status: fetch error";
+        }
+    });
+
+    </script>
+</body>
+</html>

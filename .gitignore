@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env
+.venv/
+venv/
+
+# OS stuff
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs & cache
+*.log
+cache/
+data/__temp__/
+cache/**
+
+# Environment secrets
+.env
+
+# Export tools
+all_py_files.txt
+export_py_no_venv.py
