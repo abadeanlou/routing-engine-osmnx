@@ -66,25 +66,25 @@ class GraphManager:
                           f"graph_{center_lat:.4f}_{center_lon:.4f}_{int(radius_m)}.graphml")
             if cache_file.exists():
                 import osmnx as ox
-                logger.info("Loading preloaded graph from cache: %s", cache_file)
+                logger.info(f"Loading preloaded graph from cache: {cache_file}")
                 G = ox.load_graphml(cache_file)
 
         if G is None:
-            logger.info("Preloading graph around (%.4f, %.4f), radius %.0f m",
-                        center_lat, center_lon, radius_m)
+            logger.info(f"Preloading graph around ({center_lat:.4f}, {center_lon:.4f}), "
+                        f"radius {radius_m:.0f} m")
             G = self._graph_builder(center_lat, center_lon, radius_m)
             if cache_file:
                 import osmnx as ox
                 cache_file.parent.mkdir(parents=True, exist_ok=True)
                 ox.save_graphml(G, cache_file)
-                logger.info("Preloaded graph cached to %s", cache_file)
+                logger.info(f"Preloaded graph cached to {cache_file}")
 
         G = self._ensure_numeric_weights(G)
         self.graph = G
         self.bbox = self._bbox_from_graph(G, center_lat, center_lon)
         self.frozen = True
-        logger.info("Preloaded graph ready and FROZEN: %d nodes, %d edges",
-                    G.number_of_nodes(), G.number_of_edges())
+        logger.info(f"Preloaded graph ready and FROZEN: "
+                    f"{G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
 
     def ensure_graph_for_points(self, origin: Coordinate, destination: Coordinate) -> None:
         """Ensure the graph covers both points; rebuild only in dynamic mode."""
@@ -102,8 +102,7 @@ class GraphManager:
         if self.graph is None:
             raise RuntimeError("Graph not initialised. Call ensure_graph_for_points() first.")
         node_id = self._nearest_fn(self.graph, coord)
-        logger.info("Nearest node for (%.6f, %.6f) -> node %s",
-                    coord.lat, coord.lon, node_id)
+        logger.info(f"Nearest node for ({coord.lat:.6f}, {coord.lon:.6f}) -> node {node_id}")
         return node_id
 
     # ------------------------------------------------------------------ #
@@ -161,24 +160,23 @@ class GraphManager:
         distance_m = self._haversine_distance_m(origin, destination)
         if distance_m > 2.0 * self.MAX_GRAPH_RADIUS_M:
             logger.warning(
-                "OD distance ~%.0f m exceeds 2×MAX_GRAPH_RADIUS_M=%.0f m; "
-                "the graph cannot fully cover both endpoints.",
-                distance_m, 2.0 * self.MAX_GRAPH_RADIUS_M,
+                f"OD distance ~{distance_m:.0f} m exceeds "
+                f"2×MAX_GRAPH_RADIUS_M={2.0 * self.MAX_GRAPH_RADIUS_M:.0f} m; "
+                "the graph cannot fully cover both endpoints."
             )
 
         radius_m = min(1.5 * distance_m + 2_000.0, self.MAX_GRAPH_RADIUS_M)
         center_lat = (origin.lat + destination.lat) / 2.0
         center_lon = (origin.lon + destination.lon) / 2.0
 
-        logger.info("Building OSM graph around (%.6f, %.6f), radius %.0f m "
-                    "(OD distance ~%.0f m)",
-                    center_lat, center_lon, radius_m, distance_m)
+        logger.info(f"Building OSM graph around ({center_lat:.6f}, {center_lon:.6f}), "
+                    f"radius {radius_m:.0f} m (OD distance ~{distance_m:.0f} m)")
         G = self._graph_builder(center_lat, center_lon, radius_m)
         G = self._ensure_numeric_weights(G)
         self.graph = G
         self.bbox = self._bbox_from_graph(G, center_lat, center_lon)
-        logger.info("Graph ready: %d nodes, %d edges; bbox N=%.6f S=%.6f E=%.6f W=%.6f",
-                    G.number_of_nodes(), G.number_of_edges(), *self.bbox)
+        logger.info(f"Graph ready: {G.number_of_nodes()} nodes, "
+                    f"{G.number_of_edges()} edges; bbox {self.bbox}")
 
     @staticmethod
     def _bbox_from_graph(G: nx.MultiDiGraph, center_lat: float, center_lon: float) -> Bbox:
@@ -213,8 +211,8 @@ class GraphManager:
                 num_fixed += 1
             except (TypeError, ValueError):
                 num_missing += 1
-        logger.info("Edge weights normalised: %d ok, %d without valid length/coords.",
-                    num_fixed, num_missing)
+        logger.info(f"Edge weights normalised: {num_fixed} ok, "
+                    f"{num_missing} without valid length/coords.")
         return G
 
     @staticmethod

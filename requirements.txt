@@ -3,6 +3,8 @@ fastapi==0.124.0
 uvicorn==0.38.0
 osmnx==2.0.7
 networkx==3.6
+# osmnx imports sklearn lazily inside nearest_nodes() for unprojected graphs
+scikit-learn==1.7.2
 pydantic-settings==2.12.0
 python-dotenv==1.2.1
 loguru==0.7.3
