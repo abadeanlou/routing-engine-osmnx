@@ -4,8 +4,11 @@
 
 A small, production-shaped routing engine: **FastAPI** REST API, street
 networks from **OSMnx** (OpenStreetMap), shortest paths with **NetworkX**,
-and a **Leaflet** map frontend at `/map` — click origin and destination,
-get the routed path with distance and duration.
+and a **Leaflet** map frontend — click origin and destination, get the
+routed path with distance and duration.
+
+**Live demo: <https://abadeanlou.com/routing-engine/>** — central Milan,
+preloaded-graph mode, self-hosted on GCP behind Caddy.
 
 ## How it works
 
