@@ -50,6 +50,15 @@ def create_app() -> FastAPI:
     # Serve /static/* from the static folder at project root
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+    @app.get("/")
+    async def root_page() -> FileResponse:
+        """Root serves the map too — the app runs behind a path prefix in
+        production (abadeanlou.com/routing-engine/), where the stripped
+        prefix lands here."""
+        if not INDEX_FILE.exists():
+            raise HTTPException(status_code=404, detail="index.html not found")
+        return FileResponse(INDEX_FILE)
+
     @app.get("/map")
     async def map_page() -> FileResponse:
         """
