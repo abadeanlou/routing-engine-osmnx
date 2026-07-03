@@ -1,6 +1,7 @@
 # app/core/logger.py
-from loguru import logger
 import sys
+
+from loguru import logger
 
 # Configure logger format
 logger.remove()

@@ -1,6 +1,7 @@
 # app/core/logging_config.py
-from loguru import logger
 import sys
+
+from loguru import logger
 
 
 def setup_logging() -> None:

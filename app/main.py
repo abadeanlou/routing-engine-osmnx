@@ -1,5 +1,6 @@
 # app/main.py
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -7,6 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import routes_health, routes_routing
+from app.core.config import settings
 from app.core.logger import logger
 
 # BASE_DIR = .../app
@@ -18,11 +20,27 @@ STATIC_DIR = PROJECT_ROOT / "static"
 INDEX_FILE = STATIC_DIR / "index.html"
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Public/demo mode: build one fixed-area graph at startup and freeze it,
+    so no request can ever trigger a live Overpass download."""
+    if settings.PRELOAD_GRAPH:
+        service = routes_routing.get_routing_service()
+        service.graph_manager.preload(
+            settings.PRELOAD_LAT,
+            settings.PRELOAD_LON,
+            settings.PRELOAD_RADIUS_M,
+            cache_dir=settings.GRAPH_CACHE_DIR,
+        )
+    yield
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Routing API",
-        version="0.1.0",
+        version=settings.APP_VERSION,
         description="Routing API with a Leaflet frontend served from /map.",
+        lifespan=lifespan,
     )
 
     # Routers

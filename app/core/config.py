@@ -3,9 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Application settings loaded from environment variables (.env file).
-    """
+    """Application settings loaded from environment variables (.env file)."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -13,11 +11,17 @@ class Settings(BaseSettings):
     )
 
     APP_NAME: str = "Routing Engine API"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = "0.2.0"
     ENVIRONMENT: str = "development"
 
-    # Place string for OSMnx, e.g. "Milan, Italy"
-    OSM_PLACE: str = "Milan, Italy"
+    # Preloaded (public/demo) mode: build ONE fixed-area graph at startup,
+    # cache it to disk, and refuse requests outside it. Leave PRELOAD_GRAPH
+    # false for local dynamic mode (graph rebuilt per OD area on demand).
+    PRELOAD_GRAPH: bool = False
+    PRELOAD_LAT: float = 45.4642   # Milan Duomo
+    PRELOAD_LON: float = 9.1900
+    PRELOAD_RADIUS_M: float = 7_000.0
+    GRAPH_CACHE_DIR: str = "cache"
 
 
 settings = Settings()

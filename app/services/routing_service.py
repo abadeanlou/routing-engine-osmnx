@@ -8,11 +8,11 @@ import networkx as nx
 from app.core.logger import logger
 from app.models.routing import (
     Coordinate,
+    RouteGeometry,
     RouteRequest,
     RouteResponse,
-    RouteGeometry,
-    RouteSummary,
     RouteStep,
+    RouteSummary,
 )
 from app.services.graph_manager import GraphManager
 
@@ -131,7 +131,7 @@ class RoutingService:
             duration_s=duration_s,
             geometry=coords,
         )
-        
+
         warnings = []
 
         if distance_m > 2.0 * self.graph_manager.MAX_GRAPH_RADIUS_M:
@@ -141,7 +141,7 @@ class RoutingService:
                 "Routing may fail or be incomplete."
             )
 
-        
+
         return RouteResponse(
             distance_m=distance_m,
             duration_s=duration_s,
